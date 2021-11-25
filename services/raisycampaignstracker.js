@@ -14,12 +14,12 @@ const provider = new ethers.providers.JsonRpcProvider(
 )
 const decoder = new ethers.utils.AbiCoder();
 
-const loadMarketplaceContract = () => {
+const loadCampaignsContract = () => {
   const abi = RaisyCampaignsContractInfo.abi
   const address = process.env.CONTRACTADDRESS
   return new ethers.Contract(address, abi, provider)
 }
-const marketplaceSc = loadMarketplaceContract()
+const raisyCampaignsSc = loadCampaignsContract()
 
 const apiEndPoint = process.env.API_ENDPOINT
 const callAPI = async (endpoint, data) => {
@@ -54,8 +54,8 @@ const processCampaignsEvents = async (startFromBlock) => {
   async function handleEvents(events) {
     for (const event of events) {
       // Item lifecycle events
-      if (event.event === "New Donation") {
-        console.log(`[New Donation] tx: ${event.transactionHash}, block: ${event.blockNumber}`)
+      if (event.event === "NewDonation") {
+        console.log(`[NewDonation] tx: ${event.transactionHash}, block: ${event.blockNumber}`)
         await handleNewDonation(event);
       }
 
@@ -86,7 +86,7 @@ const processCampaignsEvents = async (startFromBlock) => {
   }
 
   try {
-    const pastEvents = await marketplaceSc.queryFilter('*', startFromBlock, currentBlock);
+    const pastEvents = await raisyCampaignsSc.queryFilter('*', startFromBlock, currentBlock);
     const batches = pastEvents.reduce((batchArray, item, index) => {
       const chunkIndex = Math.floor(index / 10)
 

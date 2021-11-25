@@ -28,11 +28,12 @@ const apiEndPoint = process.env.API_ENDPOINT;
 const callAPI = async (endpoint, data) => {
 	try {
 		console.log("requesting", apiEndPoint + endpoint);
-		await axios({
+		const response = await axios({
 			method: "post",
 			url: apiEndPoint + endpoint,
 			data,
 		});
+		console.log("response: ", response);
 	} catch (err) {
 		// If bad request save event-data to dead letter queue
 		if (err && err.response && err.response.status === 400) {

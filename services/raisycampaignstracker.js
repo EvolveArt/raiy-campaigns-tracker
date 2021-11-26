@@ -33,7 +33,7 @@ const callAPI = async (endpoint, data) => {
 			url: apiEndPoint + endpoint,
 			data,
 		});
-		console.log("response: ", response);
+		// console.log("response: ", response);
 	} catch (err) {
 		// If bad request save event-data to dead letter queue
 		if (err && err.response && err.response.status === 400) {
@@ -61,6 +61,23 @@ const processCampaignsEvents = async (startFromBlock) => {
 		return callAPI("campaign/newDonation", event);
 	};
 
+	const handleNewSchedule = async (event) => {
+		return callAPI("schedule/newSchedule", event);
+	};
+
+	const handleFundsClaimed = async (event) => {
+		return callAPI("schedule/fundsClaimed", event);
+	};
+	const handleNewVoteSession = async (event) => {
+		return callAPI("voteSession/newVoteSession", event);
+	};
+	const handleNewVote = async (event) => {
+		return callAPI("voteSession/newVote", event);
+	};
+	const handleEndVoteSession = async (event) => {
+		return callAPI("voteSession/endVoteSession", event);
+	};
+
 	async function handleEvents(events) {
 		for (const event of events) {
 			// Item lifecycle events
@@ -69,6 +86,41 @@ const processCampaignsEvents = async (startFromBlock) => {
 					`[NewDonation] tx: ${event.transactionHash}, block: ${event.blockNumber}`
 				);
 				await handleNewDonation(event);
+			}
+
+			if (event.event === "ScheduleRegistered") {
+				console.log(
+					`[ScheduleRegistered] tx: ${event.transactionHash}, block: ${event.blockNumber}`
+				);
+				await handleNewSchedule(event);
+			}
+
+			if (event.event === "FundsClaimed") {
+				console.log(
+					`[FundsClaimed] tx: ${event.transactionHash}, block: ${event.blockNumber}`
+				);
+				await handleFundsClaimed(event);
+			}
+
+			if (event.event === "VoteSessionInitialized") {
+				console.log(
+					`[VoteSessionInitialized] tx: ${event.transactionHash}, block: ${event.blockNumber}`
+				);
+				await handleNewVoteSession(event);
+			}
+
+			if (event.event === "NewVote") {
+				console.log(
+					`[NewVote] tx: ${event.transactionHash}, block: ${event.blockNumber}`
+				);
+				await handleNewVote(event);
+			}
+
+			if (event.event === "EndVoteSession") {
+				console.log(
+					`[EndVoteSession] tx: ${event.transactionHash}, block: ${event.blockNumber}`
+				);
+				await handleEndVoteSession(event);
 			}
 
 			// // TODO: FIX event is not being send by contract with [buy item] method call and remove workaround

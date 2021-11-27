@@ -123,27 +123,48 @@ const processCampaignsEvents = async (startFromBlock) => {
 				await handleEndVoteSession(event);
 			}
 
-			// // TODO: FIX event is not being send by contract with [buy item] method call and remove workaround
-			// if (event.event === "ItemSold") {
-			//   console.log(`[ItemSold] tx: ${event.transactionHash}, block: ${event.blockNumber}`)
-			//   await handleItemSold(event);
-			// }
-			// // temp ItemSold event workaround
-			// if (!event.event) {
-			//   const ItemSoldEvent = "0x949d1413";
-			//   console.log('[UNDEFINED EVENT][isItemSold?] method: ', event.topics[0].slice(0, 10), " : ",  ItemSoldEvent);
-			//   if (event.topics[0].slice(0, 10) === ItemSoldEvent) {
-			//     console.log(`[ItemSold][BACKUP] tx: ${event.transactionHash}, block: ${event.blockNumber}`)
+			if (!event.event) {
+				const VoteSessionInitializedEvent = "0x45fa97d8";
+				const NewVoteEvent = "0x";
+				console.log(
+					"[UNDEFINED EVENT][isVoteSessionInitialized || isNewVote ?] method: ",
+					event.topics[0].slice(0, 10),
+					" : ",
+					VoteSessionInitializedEvent,
+					"||",
+					NewVoteEvent
+				);
+				if (event.topics[0].slice(0, 10) === VoteSessionInitializedEvent) {
+					console.log(
+						`[VoteSessionInitialized][BACKUP] tx: ${event.transactionHash}, block: ${event.blockNumber}`
+					);
 
-			//     const decodedData = decoder.decode([ 'uint256', 'uint256', 'address', 'uint256', 'uint256' ], event.data);
-			//     const seller = decoder.decode(["address"], event.topics[1])[0];
-			//     const buyer = decoder.decode(["address"], event.topics[2])[0];
-			//     const nft = decoder.decode(["address"], event.topics[3])[0];
-			//     const args = [seller, buyer, nft, ...decodedData];
+					const decodedData = decoder.decode(
+						["uint256", "uint256"],
+						event.data
+					);
+					const args = [...decodedData];
 
-			//     await handleItemSold({...event, event: "ItemSold", args});
-			//   }
-			// }
+					await handleNewVoteSession({
+						...event,
+						event: "VoteSessionInitialized",
+						args,
+					});
+				} else if (event.topics[0].slice(0, 10) === NewVoteEvent) {
+					console.log(
+						`[NewVote][BACKUP] tx: ${event.transactionHash}, block: ${event.blockNumber}`
+					);
+
+					const decodedData = decoder.decode(
+						["uint256", "uint256", "int256"],
+						event.data
+					);
+					const voter = decoder.decode(["address"], event.topics[1])[0];
+					const args = [voter, ...decodedData];
+
+					await handleNewVote({ ...event, event: "NewVote", args });
+				}
+			}
 
 			lastBlockProcessed = event.blockNumber + 1;
 		}

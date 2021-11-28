@@ -33,7 +33,7 @@ const callAPI = async (endpoint, data) => {
 			url: apiEndPoint + endpoint,
 			data,
 		});
-		// console.log("response: ", response);
+		console.log("response: ", response);
 	} catch (err) {
 		// If bad request save event-data to dead letter queue
 		if (err && err.response && err.response.status === 400) {
@@ -63,6 +63,10 @@ const processCampaignsEvents = async (startFromBlock) => {
 
 	const handleNewSchedule = async (event) => {
 		return callAPI("schedule/newSchedule", event);
+	};
+
+	const handleVoteRefund = async (event) => {
+		return callAPI("schedule/newRefundVote", event);
 	};
 
 	const handleFundsClaimed = async (event) => {
@@ -123,16 +127,26 @@ const processCampaignsEvents = async (startFromBlock) => {
 				await handleEndVoteSession(event);
 			}
 
+			if (event.event === "VoteRefund") {
+				console.log(
+					`[VoteRefund] tx: ${event.transactionHash}, block: ${event.blockNumber}`
+				);
+				await handleVoteRefund(event);
+			}
+
 			if (!event.event) {
 				const VoteSessionInitializedEvent = "0x45fa97d8";
-				const NewVoteEvent = "0x";
+				const NewVoteEvent = "0xbdaa9fa0";
+				const EndVoteSessionEvent = "0xfdfbdea6";
 				console.log(
-					"[UNDEFINED EVENT][isVoteSessionInitialized || isNewVote ?] method: ",
+					"[UNDEFINED EVENT][isVoteSessionInitialized || isNewVote || isEndVoteSession ?] method: ",
 					event.topics[0].slice(0, 10),
 					" : ",
 					VoteSessionInitializedEvent,
 					"||",
-					NewVoteEvent
+					NewVoteEvent,
+					"||",
+					EndVoteSessionEvent
 				);
 				if (event.topics[0].slice(0, 10) === VoteSessionInitializedEvent) {
 					console.log(
@@ -163,6 +177,21 @@ const processCampaignsEvents = async (startFromBlock) => {
 					const args = [voter, ...decodedData];
 
 					await handleNewVote({ ...event, event: "NewVote", args });
+				} else if (event.topics[0].slice(0, 10) === EndVoteSessionEvent) {
+					console.log(
+						`[EndVoteSession][BACKUP] tx: ${event.transactionHash}, block: ${event.blockNumber}`
+					);
+					const decodedData = decoder.decode(
+						["uint256", "uint256", "int256"],
+						event.data
+					);
+					const args = [...decodedData];
+
+					await handleEndVoteSession({
+						...event,
+						event: "EndVoteSession",
+						args,
+					});
 				}
 			}
 
